@@ -53,7 +53,12 @@ const Home: NextPage = () => {
     },
   });
 
-  const { config: approveConfig, write: approve } = useContractWrite({
+  const {
+    data: approveData,
+    isLoading: approveLoading,
+    isSuccess: approveSuccess,
+    write: approve,
+  } = useContractWrite({
     addressOrName: '0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619', // address of WETH contract
     contractInterface: wethContractInterface,
     functionName: 'approve',
