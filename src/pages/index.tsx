@@ -8,6 +8,7 @@ import {
   useAccount,
   usePrepareContractWrite,
   useContractWrite,
+  useContractRead,
   useWaitForTransaction,
 } from 'wagmi';
 import Button from '@mui/material/Button';
@@ -15,6 +16,7 @@ import Slider from '@mui/material/Slider';
 
 import styles from './index.module.css';
 import contractInterface from 'abi/contract-abi.json';
+import wethContractInterface from 'abi/weth-abi.json';
 import { success } from 'helpers/effects';
 
 const PRICE = 0.01;
@@ -26,14 +28,39 @@ const Home: NextPage = () => {
 
   const { address } = useAccount();
 
+  const { config: allowanceConfig, data: allowanceData } = useContractRead({
+    addressOrName: '0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619', // address of WETH contract
+    contractInterface: wethContractInterface,
+    functionName: 'allowance',
+    args: [
+      '0x84f28B7c5d9D695DAD48072E1BBd3450E0A71057', // address of contract that you want to approve
+      address, // user's address
+    ],
+  });
+
   const { config, error: contractError } = usePrepareContractWrite({
-    addressOrName: '0x9E33B16db8F972E57b9cB0da9438d840A5C9f7A0',
+    addressOrName: '0x84f28B7c5d9D695DAD48072E1BBd3450E0A71057',
     contractInterface: contractInterface,
     functionName: 'mint',
     args: [quantity],
     overrides: {
       from: address,
       // value: ethers.utils.parseEther((quantity * PRICE).toString()),
+    },
+  });
+
+  const { config: approveConfig, write: approve } = useContractWrite({
+    addressOrName: '0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619', // address of WETH contract
+    contractInterface: wethContractInterface,
+    functionName: 'approve',
+    args: [
+      '0x84f28B7c5d9D695DAD48072E1BBd3450E0A71057', // address of contract that you want to approve
+      ethers.utils.hexlify(
+        ethers.utils.parseEther((quantity * PRICE).toString())
+      ), // maximum amount of tokens that you want to allow the contract to spend
+    ],
+    overrides: {
+      from: address,
     },
   });
 
@@ -102,86 +129,103 @@ const Home: NextPage = () => {
           <ConnectButton showBalance={false} chainStatus='none' />
           {isConnected && (
             <>
-              {isMinted ? (
+              {/* {allowanceData && allowanceData.allowance.gt(0) ? ( */}
+              {allowanceData ? (
+                // contract has been approved, render mint button
                 <>
-                  <div className={styles.status}>Success!</div>
-                  <div className={styles.action}>
-                    <a
-                      href={`https://opensea.io/${address}?tab=collected`}
-                      target='_blank'
-                      rel='noreferrer'
-                    >
-                      View on OpenSea
-                    </a>
-                  </div>
+                  {isMinted ? (
+                    <>
+                      <div className={styles.status}>Success!</div>
+                      <div className={styles.action}>
+                        <a
+                          href={`https://opensea.io/${address}?tab=collected`}
+                          target='_blank'
+                          rel='noreferrer'
+                        >
+                          View on OpenSea
+                        </a>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className={styles.price}>
+                        You are about to mint <strong>{quantity}</strong> Cute
+                        Cone Club NFT{quantity > 1 && 's'} for a total of{' '}
+                        <strong>
+                          {Math.round(quantity * PRICE * 1000) / 1000} WETH
+                        </strong>
+                        . Move the slider below to adjust the quantity.
+                      </div>
+                      <Slider
+                        color='secondary'
+                        value={quantity}
+                        onChange={handleChange}
+                        aria-label='Quantity'
+                        valueLabelDisplay='auto'
+                        step={1}
+                        min={1}
+                        max={10}
+                        disabled={isLoading || isStarted}
+                      />
+                      <Button
+                        variant='contained'
+                        color='secondary'
+                        size='large'
+                        onClick={() => {
+                          write?.();
+                        }}
+                        disabled={!!contractError || isLoading || isStarted}
+                      >
+                        Mint
+                      </Button>
+                      {isLoading && (
+                        <div className={styles.status}>
+                          Waiting for approval...
+                        </div>
+                      )}
+                      {isStarted && (
+                        <div className={styles.status}>Minting...</div>
+                      )}
+                      {mintData && (
+                        <div className={styles.action}>
+                          <a
+                            href={`https://etherscan.io/tx/${mintData.hash}`}
+                            target='_blank'
+                            rel='noreferrer'
+                          >
+                            View transaction
+                          </a>
+                        </div>
+                      )}
+                      {contractError && (
+                        <div className={styles.error}>
+                          An error occurred while preparing the transaction.
+                          Make sure that you have enough funds, approved WETH to
+                          be spent by this contract, and that you haven’t
+                          reached your limit of 10 tokens.
+                        </div>
+                      )}
+                      {mintError && (
+                        <div className={styles.error}>
+                          An error occurred while accessing your wallet or
+                          processing the transaction.
+                        </div>
+                      )}
+                    </>
+                  )}
                 </>
               ) : (
+                // contract has not been approved, display message and button to approve contract
                 <>
-                  <div className={styles.price}>
-                    You are about to mint <strong>{quantity}</strong> Cute Cone
-                    Club NFT{quantity > 1 && 's'} for a total of{' '}
-                    <strong>
-                      {Math.round(quantity * PRICE * 1000) / 1000} WETH
-                    </strong>
-                    . Move the slider below to adjust the quantity.
-                  </div>
-                  <Slider
-                    color='secondary'
-                    value={quantity}
-                    onChange={handleChange}
-                    aria-label='Quantity'
-                    valueLabelDisplay='auto'
-                    step={1}
-                    min={1}
-                    max={10}
-                    disabled={isLoading || isStarted}
-                  />
-                  <Button
-                    variant='contained'
-                    color='secondary'
-                    size='large'
-                    onClick={() => {
-                      write?.();
-                    }}
-                    disabled={!!contractError || isLoading || isStarted}
-                  >
-                    Mint
-                  </Button>
-                  {isLoading && (
-                    <div className={styles.status}>Waiting for approval...</div>
-                  )}
-                  {isStarted && <div className={styles.status}>Minting...</div>}
-                  {mintData && (
-                    <div className={styles.action}>
-                      <a
-                        href={`https://etherscan.io/tx/${mintData.hash}`}
-                        target='_blank'
-                        rel='noreferrer'
-                      >
-                        View transaction
-                      </a>
-                    </div>
-                  )}
-                  {contractError && (
-                    <div className={styles.error}>
-                      An error occurred while preparing the transaction. Make
-                      sure that you have enough funds and that you haven’t
-                      reached your limit of 100 tokens.
-                    </div>
-                  )}
-                  {mintError && (
-                    <div className={styles.error}>
-                      An error occurred while accessing your wallet or
-                      processing the transaction.
-                    </div>
-                  )}
+                  <div>Please approve WETH contract before proceeding</div>
+                  <Button onClick={approve}>Approve WETH contract</Button>
                 </>
               )}
             </>
           )}
           <div className={styles.opensea}>
             <a
-              href='https://opensea.io/collection/cute-cone-club'
+              href='https://opensea.io/collection/cuteconeclub-v2'
               target='_blank'
               rel='noreferrer'
             >
