@@ -28,7 +28,11 @@ const Home: NextPage = () => {
 
   const { address } = useAccount();
 
-  const { config: allowanceConfig, data: allowanceData } = useContractRead({
+  const {
+    data: allowanceData,
+    isError: allowanceError,
+    isLoading: allowanceLoading,
+  } = useContractRead({
     addressOrName: '0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619', // address of WETH contract
     contractInterface: wethContractInterface,
     functionName: 'allowance',
