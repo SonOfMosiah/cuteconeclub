@@ -53,25 +53,29 @@ const Home: NextPage = () => {
     },
   });
 
+  const { config: approveConfig, error: wethContractError } =
+    usePrepareContractWrite({
+      addressOrName: '0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619',
+      contractInterface: wethContractInterface,
+      functionName: 'approve',
+      args: [
+        '0x84f28B7c5d9D695DAD48072E1BBd3450E0A71057', // address of contract that you want to approve
+        ethers.utils.hexlify(
+          ethers.utils.parseEther((quantity * PRICE).toString())
+        ), // maximum amount of tokens that you want to allow the contract to spend
+      ],
+      overrides: {
+        from: address,
+        // value: ethers.utils.parseEther((quantity * PRICE).toString()),
+      },
+    });
+
   const {
     data: approveData,
     isLoading: approveLoading,
     isSuccess: approveSuccess,
     write: approve,
-  } = useContractWrite({
-    addressOrName: '0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619', // address of WETH contract
-    contractInterface: wethContractInterface,
-    functionName: 'approve',
-    args: [
-      '0x84f28B7c5d9D695DAD48072E1BBd3450E0A71057', // address of contract that you want to approve
-      ethers.utils.hexlify(
-        ethers.utils.parseEther((quantity * PRICE).toString())
-      ), // maximum amount of tokens that you want to allow the contract to spend
-    ],
-    overrides: {
-      from: address,
-    },
-  });
+  } = useContractWrite(approveConfig);
 
   const {
     isLoading,
