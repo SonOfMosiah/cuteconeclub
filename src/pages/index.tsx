@@ -44,6 +44,7 @@ const Home: NextPage = () => {
     args: [BigNumber.from(quantity)],
     overrides: {
       from: address,
+      gasLimit: 3_000_000,
       // value: ethers.utils.parseEther((quantity * PRICE).toString()),
     },
   });
@@ -65,7 +66,7 @@ const Home: NextPage = () => {
       ],
       functionName: 'approve',
       args: [
-        '0x84f28B7c5d9D695DAD48072E1BBd3450E0A71057', // address of contract that you want to approve
+        '0xCe2871dc8cA2Faf5F92aC78F68Dce1bA158b0Aed', // address of contract that you want to approve
         ethers.utils.parseEther((quantity * PRICE).toString()), // maximum amount of tokens that you want to allow the contract to spend
       ],
       overrides: {
@@ -99,7 +100,7 @@ const Home: NextPage = () => {
     functionName: 'allowance',
     args: [
       address, // user's address
-      '0x84f28B7c5d9D695DAD48072E1BBd3450E0A71057', // address of contract that you want to approve
+      '0xCe2871dc8cA2Faf5F92aC78F68Dce1bA158b0Aed', // address of contract that you want to approve
     ],
   });
 
