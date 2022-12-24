@@ -3,7 +3,7 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 import type { NextPage } from 'next';
 import Image from 'next/image';
 import Head from 'next/head';
-import { ethers } from 'ethers';
+import { ethers, BigNumber } from 'ethers';
 import {
   useAccount,
   usePrepareContractWrite,
@@ -15,8 +15,8 @@ import Button from '@mui/material/Button';
 import Slider from '@mui/material/Slider';
 
 import styles from './index.module.css';
-import contractInterface from 'abi/contract-abi.json';
-import wethContractInterface from 'abi/weth-abi.json';
+import abi from 'abi/contract-abi.json';
+import wethAbi from 'abi/weth-abi.json';
 import { success } from 'helpers/effects';
 
 const PRICE = 0.01;
@@ -29,10 +29,18 @@ const Home: NextPage = () => {
   const { address } = useAccount();
 
   const { config, error: contractError } = usePrepareContractWrite({
-    addressOrName: '0x84f28B7c5d9D695DAD48072E1BBd3450E0A71057',
-    contractInterface: contractInterface,
+    address: '0x84f28B7c5d9D695DAD48072E1BBd3450E0A71057',
+    abi: [
+      {
+        name: 'mint',
+        type: 'function',
+        stateMutability: 'nonpayable',
+        inputs: [{ internalType: 'uint256', name: 'amount', type: 'uint256' }],
+        outputs: [],
+      },
+    ],
     functionName: 'mint',
-    args: [quantity],
+    args: [BigNumber.from(quantity)],
     overrides: {
       from: address,
       // value: ethers.utils.parseEther((quantity * PRICE).toString()),
@@ -41,18 +49,26 @@ const Home: NextPage = () => {
 
   const { config: approveConfig, error: wethContractError } =
     usePrepareContractWrite({
-      addressOrName: '0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619',
-      contractInterface: wethContractInterface,
+      address: '0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619',
+      abi: [
+        {
+          name: 'approve',
+          type: 'function',
+          stateMutability: 'nonpayable',
+          inputs: [
+            { internalType: 'address', name: 'spender', type: 'address' },
+            { internalType: 'uint256', name: 'amount', type: 'uint256' },
+          ],
+          outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
+        },
+      ],
       functionName: 'approve',
       args: [
         '0x84f28B7c5d9D695DAD48072E1BBd3450E0A71057', // address of contract that you want to approve
-        ethers.utils.hexlify(
-          ethers.utils.parseEther((quantity * PRICE).toString())
-        ), // maximum amount of tokens that you want to allow the contract to spend
+        ethers.utils.parseEther((quantity * PRICE).toString()), // maximum amount of tokens that you want to allow the contract to spend
       ],
       overrides: {
         from: address,
-        // value: ethers.utils.parseEther((quantity * PRICE).toString()),
       },
     });
 
@@ -77,8 +93,8 @@ const Home: NextPage = () => {
     isLoading: allowanceLoading,
     refetch,
   } = useContractRead({
-    addressOrName: '0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619', // address of WETH contract
-    contractInterface: wethContractInterface,
+    address: '0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619', // address of WETH contract
+    abi: wethAbi,
     functionName: 'allowance',
     args: [
       address, // user's address
@@ -100,9 +116,12 @@ const Home: NextPage = () => {
 
   const checkIfWalletIsApproved = async () => {
     refetch();
+    console.log('allowanceData', allowanceData);
     if (
       allowanceData &&
-      allowanceData.gte(ethers.utils.parseEther((quantity * PRICE).toString()))
+      BigNumber.from(allowanceData).gte(
+        ethers.utils.parseEther((quantity * PRICE).toString())
+      )
     ) {
       setApproved(true);
     } else {
