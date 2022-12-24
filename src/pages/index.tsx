@@ -21,6 +21,7 @@ import wethAbi from 'abi/weth-abi.json';
 import { success } from 'helpers/effects';
 
 const PRICE = 0.01;
+const cccAddress = '0xCe2871dc8cA2Faf5F92aC78F68Dce1bA158b0Aed';
 
 const Home: NextPage = () => {
   const [approved, setApproved] = useState(false);
@@ -30,7 +31,7 @@ const Home: NextPage = () => {
   const { address } = useAccount();
 
   const { config, error: contractError } = usePrepareContractWrite({
-    address: '0xCe2871dc8cA2Faf5F92aC78F68Dce1bA158b0Aed',
+    address: cccAddress,
     abi: [
       {
         name: 'mint',
@@ -66,7 +67,7 @@ const Home: NextPage = () => {
       ],
       functionName: 'approve',
       args: [
-        '0xCe2871dc8cA2Faf5F92aC78F68Dce1bA158b0Aed', // address of contract that you want to approve
+        cccAddress, // address of contract that you want to approve
         ethers.utils.parseEther((quantity * PRICE).toString()), // maximum amount of tokens that you want to allow the contract to spend
       ],
       overrides: {
@@ -100,7 +101,7 @@ const Home: NextPage = () => {
     functionName: 'allowance',
     args: [
       address, // user's address
-      '0xCe2871dc8cA2Faf5F92aC78F68Dce1bA158b0Aed', // address of contract that you want to approve
+      cccAddress, // address of contract that you want to approve
     ],
   });
 
