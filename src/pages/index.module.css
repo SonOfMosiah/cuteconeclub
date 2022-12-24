@@ -54,3 +54,14 @@
 .opensea {
   margin-top: 1.5rem;
 }
+.title1 {
+  justify-content: center;
+  margin-bottom: 0rem;
+  border: 0;
+}
+
+.title2 {
+  justify-content: center;
+  margin-top: 0rem;
+  border: 0;
+}

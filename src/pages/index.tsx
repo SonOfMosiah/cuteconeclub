@@ -189,8 +189,8 @@ const Home: NextPage = () => {
       </Head>
       <div className={styles.container}>
         <div className={styles.main}>
-          <h1 className={styles.title}>Mint</h1>
-          <h1 className={styles.title}>Cute Cone Club</h1>
+          <h1 className={styles.title1}>Mint</h1>
+          <h1 className={styles.title2}>Cute Cone Club</h1>
           <div className={styles.logoContainer}>
             <Image
               src='/img/logo.gif'
