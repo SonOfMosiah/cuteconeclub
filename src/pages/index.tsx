@@ -116,7 +116,6 @@ const Home: NextPage = () => {
 
   const checkIfWalletIsApproved = async () => {
     refetch();
-    console.log('allowanceData', allowanceData);
     if (
       allowanceData &&
       BigNumber.from(allowanceData).gte(
