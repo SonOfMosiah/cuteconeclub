@@ -94,16 +94,12 @@ const Home: NextPage = () => {
   };
 
   const checkIfWalletIsApproved = async () => {
-    console.log('enter checkIfWalletIsApproved:', allowanceData);
     if (
       allowanceData &&
       allowanceData.gt(ethers.utils.parseEther((quantity * PRICE).toString()))
     ) {
-      console.log('set approved true');
       setApproved(true);
     } else {
-      console.log('allowanceData', allowanceData.toString());
-      console.log('set approved false');
       setApproved(false);
     }
   };
