@@ -75,6 +75,7 @@ const Home: NextPage = () => {
     data: allowanceData,
     isError: allowanceError,
     isLoading: allowanceLoading,
+    refetch,
   } = useContractRead({
     addressOrName: '0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619', // address of WETH contract
     contractInterface: wethContractInterface,
@@ -89,14 +90,19 @@ const Home: NextPage = () => {
     hash: mintData?.hash,
   });
 
+  const { isSuccess: isApproved } = useWaitForTransaction({
+    hash: approveData?.hash,
+  });
+
   const handleChange = (event: Event, newValue: number | number[]) => {
     setQuantity(newValue as number);
   };
 
   const checkIfWalletIsApproved = async () => {
+    refetch();
     if (
       allowanceData &&
-      allowanceData.gt(ethers.utils.parseEther((quantity * PRICE).toString()))
+      allowanceData.gte(ethers.utils.parseEther((quantity * PRICE).toString()))
     ) {
       setApproved(true);
     } else {
@@ -129,6 +135,12 @@ const Home: NextPage = () => {
       success();
     }
   }, [isMinted]);
+
+  useEffect(() => {
+    if (isApproved) {
+      checkIfWalletIsApproved();
+    }
+  }, [isApproved]);
 
   return (
     <>
@@ -286,9 +298,27 @@ const Home: NextPage = () => {
                     onClick={() => {
                       approve?.();
                     }}
+                    disabled={!!wethContractError}
                   >
                     Approve WETH
                   </Button>
+                  {approveLoading && !approveSuccess && (
+                    <div className={styles.status}>Waiting for approval...</div>
+                  )}
+                  {approveSuccess && !approveData && (
+                    <div className={styles.status}>Approving WETH...</div>
+                  )}
+                  {approveData && (
+                    <div className={styles.action}>
+                      <a
+                        href={`https://etherscan.io/tx/${approveData.hash}`}
+                        target='_blank'
+                        rel='noreferrer'
+                      >
+                        View transaction
+                      </a>
+                    </div>
+                  )}
                 </>
               )}
             </>
