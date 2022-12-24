@@ -45,7 +45,6 @@ const Home: NextPage = () => {
     args: [BigNumber.from(quantity)],
     overrides: {
       from: address,
-      gasLimit: 3_000_000,
       // value: ethers.utils.parseEther((quantity * PRICE).toString()),
     },
   });
