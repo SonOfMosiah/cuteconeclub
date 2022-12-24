@@ -13,6 +13,7 @@ import {
 } from 'wagmi';
 import Button from '@mui/material/Button';
 import Slider from '@mui/material/Slider';
+import { toast } from 'react-toastify';
 
 import styles from './index.module.css';
 import abi from 'abi/contract-abi.json';
@@ -29,7 +30,7 @@ const Home: NextPage = () => {
   const { address } = useAccount();
 
   const { config, error: contractError } = usePrepareContractWrite({
-    address: '0x84f28B7c5d9D695DAD48072E1BBd3450E0A71057',
+    address: '0x6c3edA0E75190293574e99BA4CB51e39bce675D9',
     abi: [
       {
         name: 'mint',
@@ -187,6 +188,15 @@ const Home: NextPage = () => {
           src='https://umami.0x3.studio/umami.js'
         ></script>
       </Head>
+      {/* {contractError && (
+        <toast.error>{`Error preparing contract write: ${contractError}`}</toast.error>
+      )}
+      {wethContractError && (
+        <toast.error>{`Error preparing contract write: ${wethContractError}`}</toast.error>
+      )}
+      {mintError && (
+        <toast.error>{`Error writing to contract: ${mintError}`}</toast.error>
+      )} */}
       <div className={styles.container}>
         <div className={styles.main}>
           <h1 className={styles.title1}>Mint</h1>
