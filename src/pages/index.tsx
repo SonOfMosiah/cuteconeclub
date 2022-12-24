@@ -231,7 +231,7 @@ const Home: NextPage = () => {
                 // contract has not been approved, display message and button to approve contract
                 <>
                   <div>Please approve WETH contract before proceeding</div>
-                  <Button onClick={approve}>Approve WETH contract</Button>
+                  {/* <Button onClick={approve}>Approve WETH contract</Button> */}
                 </>
               )}
             </>
