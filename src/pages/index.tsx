@@ -353,7 +353,7 @@ const Home: NextPage = () => {
           )}
           <div className={styles.opensea}>
             <a
-              href='https://opensea.io/collection/cuteconeclub-v2'
+              href='https://opensea.io/collection/cuteconeclub'
               target='_blank'
               rel='noreferrer'
             >
