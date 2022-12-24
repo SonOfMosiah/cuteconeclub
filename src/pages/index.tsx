@@ -22,25 +22,11 @@ import { success } from 'helpers/effects';
 const PRICE = 0.01;
 
 const Home: NextPage = () => {
-  const [isApproved, setIsApproved] = useState(false);
+  const [approved, setApproved] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [quantity, setQuantity] = useState<number>(3);
 
   const { address } = useAccount();
-
-  const {
-    data: allowanceData,
-    isError: allowanceError,
-    isLoading: allowanceLoading,
-  } = useContractRead({
-    addressOrName: '0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619', // address of WETH contract
-    contractInterface: wethContractInterface,
-    functionName: 'allowance',
-    args: [
-      '0x84f28B7c5d9D695DAD48072E1BBd3450E0A71057', // address of contract that you want to approve
-      address, // user's address
-    ],
-  });
 
   const { config, error: contractError } = usePrepareContractWrite({
     addressOrName: '0x84f28B7c5d9D695DAD48072E1BBd3450E0A71057',
@@ -85,6 +71,20 @@ const Home: NextPage = () => {
     write,
   } = useContractWrite(config);
 
+  const {
+    data: allowanceData,
+    isError: allowanceError,
+    isLoading: allowanceLoading,
+  } = useContractRead({
+    addressOrName: '0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619', // address of WETH contract
+    contractInterface: wethContractInterface,
+    functionName: 'allowance',
+    args: [
+      address, // user's address
+      '0x84f28B7c5d9D695DAD48072E1BBd3450E0A71057', // address of contract that you want to approve
+    ],
+  });
+
   const { isSuccess: isMinted } = useWaitForTransaction({
     hash: mintData?.hash,
   });
@@ -92,6 +92,37 @@ const Home: NextPage = () => {
   const handleChange = (event: Event, newValue: number | number[]) => {
     setQuantity(newValue as number);
   };
+
+  const checkIfWalletIsApproved = async () => {
+    console.log('enter checkIfWalletIsApproved:', allowanceData);
+    if (
+      allowanceData &&
+      allowanceData.gt(ethers.utils.parseEther((quantity * PRICE).toString()))
+    ) {
+      console.log('set approved true');
+      setApproved(true);
+    } else {
+      console.log('allowanceData', allowanceData.toString());
+      console.log('set approved false');
+      setApproved(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isConnected && !approved) {
+      checkIfWalletIsApproved();
+    }
+  }, [isConnected, approved]);
+
+  useEffect(() => {
+    if (allowanceData) {
+      checkIfWalletIsApproved();
+    }
+  }, [allowanceData]);
+
+  useEffect(() => {
+    checkIfWalletIsApproved();
+  }, [quantity]);
 
   useEffect(() => {
     setIsConnected(!!address);
@@ -132,6 +163,8 @@ const Home: NextPage = () => {
       </Head>
       <div className={styles.container}>
         <div className={styles.main}>
+          <h1 className={styles.title}>Mint</h1>
+          <h1 className={styles.title}>Cute Cone Club</h1>
           <div className={styles.logoContainer}>
             <Image
               src='/img/logo.gif'
@@ -143,7 +176,7 @@ const Home: NextPage = () => {
           {isConnected && (
             <>
               {/* {allowanceData && allowanceData.allowance.gt(0) ? ( */}
-              {allowanceData ? (
+              {approved ? (
                 // contract has been approved, render mint button
                 <>
                   {isMinted ? (
@@ -230,8 +263,34 @@ const Home: NextPage = () => {
               ) : (
                 // contract has not been approved, display message and button to approve contract
                 <>
+                  <div className={styles.price}>
+                    You are about to mint <strong>{quantity}</strong> Cute Cone
+                    Club NFT{quantity > 1 && 's'} for a total of{' '}
+                    <strong>
+                      {Math.round(quantity * PRICE * 1000) / 1000} WETH
+                    </strong>
+                    . Move the slider below to adjust the quantity.
+                  </div>
+                  <Slider
+                    color='secondary'
+                    value={quantity}
+                    onChange={handleChange}
+                    aria-label='Quantity'
+                    valueLabelDisplay='auto'
+                    step={1}
+                    min={1}
+                    max={10}
+                    disabled={isLoading || isStarted}
+                  />
                   <div>Please approve WETH contract before proceeding</div>
-                  {/* <Button onClick={approve}>Approve WETH contract</Button> */}
+                  <Button
+                    variant='contained'
+                    color='secondary'
+                    size='large'
+                    onClick={approve}
+                  >
+                    Approve WETH
+                  </Button>
                 </>
               )}
             </>
