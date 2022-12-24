@@ -30,7 +30,7 @@ const Home: NextPage = () => {
   const { address } = useAccount();
 
   const { config, error: contractError } = usePrepareContractWrite({
-    address: '0x42bA6975CAd58Fc486c53d7d1932BEe200EcEB9b',
+    address: '0xCe2871dc8cA2Faf5F92aC78F68Dce1bA158b0Aed',
     abi: [
       {
         name: 'mint',
