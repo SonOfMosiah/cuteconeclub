@@ -283,7 +283,9 @@ const Home: NextPage = () => {
                     variant='contained'
                     color='secondary'
                     size='large'
-                    onClick={approve}
+                    onClick={() => {
+                      approve?.();
+                    }}
                   >
                     Approve WETH
                   </Button>
