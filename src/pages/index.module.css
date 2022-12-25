@@ -53,6 +53,8 @@
 }
 .opensea {
   margin-top: 1.5rem;
+  width: 20rem;
+  text-align: center; /* centers the content within the div */
 }
 .title1 {
   justify-content: center;

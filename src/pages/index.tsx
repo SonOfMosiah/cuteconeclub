@@ -21,6 +21,7 @@ import wethAbi from 'abi/weth-abi.json';
 import { success } from 'helpers/effects';
 
 const PRICE = 0.01;
+const TOTAL_SUPPLY = 420;
 const cccAddress = '0xCe2871dc8cA2Faf5F92aC78F68Dce1bA158b0Aed';
 
 const Home: NextPage = () => {
@@ -104,6 +105,23 @@ const Home: NextPage = () => {
     ],
   });
 
+  let x: any;
+
+  const { data: totalSupply, refetch: supplyRefetch } = useContractRead({
+    address: cccAddress,
+    abi: [
+      {
+        name: 'totalSupply',
+        type: 'function',
+        stateMutability: 'view',
+        inputs: [],
+        outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+      },
+    ],
+    functionName: 'totalSupply',
+    args: x,
+  });
+
   const { isSuccess: isMinted } = useWaitForTransaction({
     hash: mintData?.hash,
   });
@@ -137,12 +155,6 @@ const Home: NextPage = () => {
   }, [isConnected, approved]);
 
   useEffect(() => {
-    if (allowanceData) {
-      checkIfWalletIsApproved();
-    }
-  }, [allowanceData]);
-
-  useEffect(() => {
     checkIfWalletIsApproved();
   }, [quantity]);
 
@@ -152,6 +164,7 @@ const Home: NextPage = () => {
 
   useEffect(() => {
     if (isMinted) {
+      supplyRefetch();
       success();
     }
   }, [isMinted]);
@@ -212,7 +225,33 @@ const Home: NextPage = () => {
           <ConnectButton showBalance={false} chainStatus='none' />
           {isConnected && (
             <>
-              {/* {allowanceData && allowanceData.allowance.gt(0) ? ( */}
+              <div className={styles.price}>
+                You are about to mint <strong>{quantity}</strong> Cute Cone Club
+                NFT{quantity > 1 && 's'} for a total of{' '}
+                <strong>
+                  {Math.round(quantity * PRICE * 1000) / 1000} WETH
+                </strong>
+                . Move the slider below to adjust the quantity.
+              </div>
+              {totalSupply && (
+                <div className={styles.price}>
+                  <strong>{totalSupply.toString()}</strong> /{' '}
+                  <strong>{TOTAL_SUPPLY} </strong>
+                  minted
+                </div>
+              )}
+              <Slider
+                // color='primary'
+                style={{ color: 'orange' }}
+                value={quantity}
+                onChange={handleChange}
+                aria-label='Quantity'
+                valueLabelDisplay='auto'
+                step={1}
+                min={1}
+                max={10}
+                disabled={isLoading || isStarted}
+              />
               {approved ? (
                 // contract has been approved, render mint button
                 <>
@@ -231,28 +270,9 @@ const Home: NextPage = () => {
                     </>
                   ) : (
                     <>
-                      <div className={styles.price}>
-                        You are about to mint <strong>{quantity}</strong> Cute
-                        Cone Club NFT{quantity > 1 && 's'} for a total of{' '}
-                        <strong>
-                          {Math.round(quantity * PRICE * 1000) / 1000} WETH
-                        </strong>
-                        . Move the slider below to adjust the quantity.
-                      </div>
-                      <Slider
-                        color='secondary'
-                        value={quantity}
-                        onChange={handleChange}
-                        aria-label='Quantity'
-                        valueLabelDisplay='auto'
-                        step={1}
-                        min={1}
-                        max={10}
-                        disabled={isLoading || isStarted}
-                      />
                       <Button
                         variant='contained'
-                        color='secondary'
+                        color='primary'
                         size='large'
                         onClick={() => {
                           write?.();
@@ -300,29 +320,10 @@ const Home: NextPage = () => {
               ) : (
                 // contract has not been approved, display message and button to approve contract
                 <>
-                  <div className={styles.price}>
-                    You are about to mint <strong>{quantity}</strong> Cute Cone
-                    Club NFT{quantity > 1 && 's'} for a total of{' '}
-                    <strong>
-                      {Math.round(quantity * PRICE * 1000) / 1000} WETH
-                    </strong>
-                    . Move the slider below to adjust the quantity.
-                  </div>
-                  <Slider
-                    color='secondary'
-                    value={quantity}
-                    onChange={handleChange}
-                    aria-label='Quantity'
-                    valueLabelDisplay='auto'
-                    step={1}
-                    min={1}
-                    max={10}
-                    disabled={isLoading || isStarted}
-                  />
                   <div>Please approve WETH contract before proceeding</div>
                   <Button
                     variant='contained'
-                    color='secondary'
+                    style={{ backgroundColor: 'orange' }}
                     size='large'
                     onClick={() => {
                       approve?.();
@@ -357,12 +358,26 @@ const Home: NextPage = () => {
               href='https://opensea.io/collection/cuteconeclub'
               target='_blank'
               rel='noreferrer'
+              style={{ marginRight: '1.5rem' }}
             >
               <Image
                 src='/img/opensea.svg'
                 width='50'
                 height='50'
                 alt='OpenSea logo'
+              />
+            </a>
+            <a
+              href='https://polygonscan.com/token/0xce2871dc8ca2faf5f92ac78f68dce1ba158b0aed'
+              target='_blank'
+              rel='noreferrer'
+              style={{ marginLeft: '1.5rem' }}
+            >
+              <Image
+                src='/img/polygonscan.svg'
+                width='50'
+                height='50'
+                alt='Polygonscan logo'
               />
             </a>
           </div>
