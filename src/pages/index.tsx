@@ -226,12 +226,13 @@ const Home: NextPage = () => {
           {isConnected && (
             <>
               <div className={styles.price}>
-                You are about to mint <strong>{quantity}</strong> Cute Cone Club
+                <h2> The Mint has been Paused </h2>
+                {/* You are about to mint <strong>{quantity}</strong> Cute Cone Club
                 NFT{quantity > 1 && 's'} for a total of{' '}
                 <strong>
                   {Math.round(quantity * PRICE * 1000) / 1000} WETH
                 </strong>
-                . Move the slider below to adjust the quantity.
+                . Move the slider below to adjust the quantity. */}
               </div>
               {totalSupply && (
                 <div className={styles.price}>
@@ -240,7 +241,7 @@ const Home: NextPage = () => {
                   minted
                 </div>
               )}
-              <Slider
+              {/* <Slider
                 // color='primary'
                 style={{ color: 'orange' }}
                 value={quantity}
@@ -251,7 +252,7 @@ const Home: NextPage = () => {
                 min={1}
                 max={10}
                 disabled={isLoading || isStarted}
-              />
+              /> */}
               {approved ? (
                 // contract has been approved, render mint button
                 <>
@@ -270,7 +271,7 @@ const Home: NextPage = () => {
                     </>
                   ) : (
                     <>
-                      <Button
+                      {/* <Button
                         variant='contained'
                         color='primary'
                         size='large'
@@ -280,7 +281,7 @@ const Home: NextPage = () => {
                         disabled={!!contractError || isLoading || isStarted}
                       >
                         Mint
-                      </Button>
+                      </Button> */}
                       {isLoading && (
                         <div className={styles.status}>
                           Waiting for approval...
@@ -320,7 +321,7 @@ const Home: NextPage = () => {
               ) : (
                 // contract has not been approved, display message and button to approve contract
                 <>
-                  <div>Please approve WETH contract before proceeding</div>
+                  {/* <div>Please approve WETH contract before proceeding</div>
                   <Button
                     variant='contained'
                     style={{ backgroundColor: 'orange' }}
@@ -331,7 +332,7 @@ const Home: NextPage = () => {
                     disabled={!!wethContractError}
                   >
                     Approve WETH
-                  </Button>
+                  </Button> */}
                   {approveLoading && !approveSuccess && (
                     <div className={styles.status}>Waiting for approval...</div>
                   )}
