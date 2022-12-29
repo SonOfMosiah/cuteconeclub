@@ -222,11 +222,13 @@ const Home: NextPage = () => {
               layout='fill'
             />
           </div>
-          <ConnectButton showBalance={false} chainStatus='none' />
+          {/* <ConnectButton showBalance={false} chainStatus='none' /> */}
+          <div className={styles.price}>
+            <h2> The Mint has been Paused </h2>
+          </div>
           {isConnected && (
             <>
               <div className={styles.price}>
-                <h2> The Mint has been Paused </h2>
                 {/* You are about to mint <strong>{quantity}</strong> Cute Cone Club
                 NFT{quantity > 1 && 's'} for a total of{' '}
                 <strong>
