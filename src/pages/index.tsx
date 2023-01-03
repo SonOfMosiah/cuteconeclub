@@ -304,7 +304,7 @@ const Home: NextPage = () => {
               />
             </a>
             <a
-              href='https://polygonscan.com/token/0xce2871dc8ca2faf5f92ac78f68dce1ba158b0aed'
+              href='https://polygonscan.com/token/0x773A5914BEB6c395F85F911B244EB44Dc49dCD6E'
               target='_blank'
               rel='noreferrer'
               style={{ marginLeft: '1.5rem' }}
