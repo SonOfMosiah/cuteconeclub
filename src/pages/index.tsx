@@ -14,73 +14,35 @@ import {
 import Button from '@mui/material/Button';
 import Slider from '@mui/material/Slider';
 import { toast } from 'react-toastify';
+import axios from 'axios';
 
 import styles from './index.module.css';
+import newAbi from 'abi/new-contract-abi.json';
 import abi from 'abi/contract-abi.json';
-import wethAbi from 'abi/weth-abi.json';
 import { success } from 'helpers/effects';
 
 const PRICE = 0.01;
 const TOTAL_SUPPLY = 420;
 const cccAddress = '0xCe2871dc8cA2Faf5F92aC78F68Dce1bA158b0Aed';
+const newCCCAddress = '0x773A5914BEB6c395F85F911B244EB44Dc49dCD6E';
+
+const pinataApiKey = process.env.NEXT_PUBLIC_PINATA_KEY;
+const pinataSecretApiKey = process.env.NEXT_PUBLIC_PINATA_SECRET;
 
 const Home: NextPage = () => {
-  const [approved, setApproved] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
-  const [quantity, setQuantity] = useState<number>(3);
 
   const { address } = useAccount();
 
   const { config, error: contractError } = usePrepareContractWrite({
-    address: cccAddress,
-    abi: [
-      {
-        name: 'mint',
-        type: 'function',
-        stateMutability: 'nonpayable',
-        inputs: [{ internalType: 'uint256', name: 'amount', type: 'uint256' }],
-        outputs: [],
-      },
-    ],
+    address: newCCCAddress,
+    abi: newAbi,
     functionName: 'mint',
-    args: [BigNumber.from(quantity)],
+    args: [],
     overrides: {
       from: address,
-      // value: ethers.utils.parseEther((quantity * PRICE).toString()),
     },
   });
-
-  const { config: approveConfig, error: wethContractError } =
-    usePrepareContractWrite({
-      address: '0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619',
-      abi: [
-        {
-          name: 'approve',
-          type: 'function',
-          stateMutability: 'nonpayable',
-          inputs: [
-            { internalType: 'address', name: 'spender', type: 'address' },
-            { internalType: 'uint256', name: 'amount', type: 'uint256' },
-          ],
-          outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
-        },
-      ],
-      functionName: 'approve',
-      args: [
-        cccAddress, // address of contract that you want to approve
-        ethers.utils.parseEther((quantity * PRICE).toString()), // maximum amount of tokens that you want to allow the contract to spend
-      ],
-      overrides: {
-        from: address,
-      },
-    });
-
-  const {
-    data: approveData,
-    isLoading: approveLoading,
-    isSuccess: approveSuccess,
-    write: approve,
-  } = useContractWrite(approveConfig);
 
   const {
     isLoading,
@@ -90,25 +52,10 @@ const Home: NextPage = () => {
     write,
   } = useContractWrite(config);
 
-  const {
-    data: allowanceData,
-    isError: allowanceError,
-    isLoading: allowanceLoading,
-    refetch,
-  } = useContractRead({
-    address: '0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619', // address of WETH contract
-    abi: wethAbi,
-    functionName: 'allowance',
-    args: [
-      address, // user's address
-      cccAddress, // address of contract that you want to approve
-    ],
-  });
-
   let x: any;
 
   const { data: totalSupply, refetch: supplyRefetch } = useContractRead({
-    address: cccAddress,
+    address: newCCCAddress,
     abi: [
       {
         name: 'totalSupply',
@@ -122,41 +69,80 @@ const Home: NextPage = () => {
     args: x,
   });
 
+  let tokenId: BigNumber;
+
+  const { data: tokenURI, refetch: uriRefetch } = useContractRead({
+    address: newCCCAddress,
+    abi: [
+      {
+        inputs: [
+          {
+            internalType: 'uint256',
+            name: 'tokenId',
+            type: 'uint256',
+          },
+        ],
+        name: 'tokenURI',
+        outputs: [
+          {
+            internalType: 'string',
+            name: '',
+            type: 'string',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+    ],
+    functionName: 'tokenURI',
+    args: totalSupply,
+  });
+
   const { isSuccess: isMinted } = useWaitForTransaction({
     hash: mintData?.hash,
   });
 
-  const { isSuccess: isApproved } = useWaitForTransaction({
-    hash: approveData?.hash,
-  });
+  let ipfsHash: string;
 
-  const handleChange = (event: Event, newValue: number | number[]) => {
-    setQuantity(newValue as number);
-  };
-
-  const checkIfWalletIsApproved = async () => {
-    refetch();
-    if (
-      allowanceData &&
-      BigNumber.from(allowanceData).gte(
-        ethers.utils.parseEther((quantity * PRICE).toString())
-      )
-    ) {
-      setApproved(true);
-    } else {
-      setApproved(false);
+  const getTokenData = async () => {
+    if (tokenURI) {
+      try {
+        const response = await axios.get(
+          `https://api.pinata.cloud/data/getContent/${tokenURI}`,
+          {
+            headers: {
+              pinata_api_key: pinataApiKey,
+              pinata_secret_api_key: pinataSecretApiKey,
+            },
+          }
+        );
+        ipfsHash = response.data.image;
+      } catch (error) {
+        console.error(error);
+        return null;
+      }
     }
   };
 
-  useEffect(() => {
-    if (isConnected && !approved) {
-      checkIfWalletIsApproved();
+  const getImageFromIPFSHash = async () => {
+    try {
+      const response = await axios.get(
+        `https://api.pinata.cloud/data/getContent/${ipfsHash}`,
+        {
+          headers: {
+            pinata_api_key: pinataApiKey,
+            pinata_secret_api_key: pinataSecretApiKey,
+          },
+        }
+      );
+      const image = new Image();
+      image.src = 'data:image/jpeg;base64,' + response.data.data;
+      return image;
+    } catch (error) {
+      console.error(error);
+      return null;
     }
-  }, [isConnected, approved]);
-
-  useEffect(() => {
-    checkIfWalletIsApproved();
-  }, [quantity]);
+  };
 
   useEffect(() => {
     setIsConnected(!!address);
@@ -165,15 +151,10 @@ const Home: NextPage = () => {
   useEffect(() => {
     if (isMinted) {
       supplyRefetch();
+      uriRefetch();
       success();
     }
   }, [isMinted]);
-
-  useEffect(() => {
-    if (isApproved) {
-      checkIfWalletIsApproved();
-    }
-  }, [isApproved]);
 
   return (
     <>
@@ -202,30 +183,26 @@ const Home: NextPage = () => {
           src='https://umami.0x3.studio/umami.js'
         ></script>
       </Head>
-      {/* {contractError && (
-        <toast.error>{`Error preparing contract write: ${contractError}`}</toast.error>
-      )}
-      {wethContractError && (
-        <toast.error>{`Error preparing contract write: ${wethContractError}`}</toast.error>
-      )}
-      {mintError && (
-        <toast.error>{`Error writing to contract: ${mintError}`}</toast.error>
-      )} */}
       <div className={styles.container}>
         <div className={styles.main}>
           <h1 className={styles.title1}>Mint</h1>
           <h1 className={styles.title2}>Cute Cone Club</h1>
-          <div className={styles.logoContainer}>
-            <Image
-              src='/img/logo.gif'
-              alt='Cute Cone Club logo'
-              layout='fill'
-            />
-          </div>
-          {/* <ConnectButton showBalance={false} chainStatus='none' /> */}
-          <div className={styles.price}>
-            <h2> The Mint has been Paused </h2>
-          </div>
+          {!isMinted && (
+            <>
+              <div className={styles.logoContainer}>
+                <Image
+                  src='/img/logo.gif'
+                  alt='Cute Cone Club logo'
+                  layout='fill'
+                />
+              </div>
+            </>
+          )}
+          {isMinted && (
+            <div className={styles.logoContainer}>getImageFromIPFSHash()</div>
+          )}
+
+          <ConnectButton showBalance={false} chainStatus='none' />
           {isConnected && (
             <>
               <div className={styles.price}>
@@ -243,113 +220,60 @@ const Home: NextPage = () => {
                   minted
                 </div>
               )}
-              {/* <Slider
-                // color='primary'
-                style={{ color: 'orange' }}
-                value={quantity}
-                onChange={handleChange}
-                aria-label='Quantity'
-                valueLabelDisplay='auto'
-                step={1}
-                min={1}
-                max={10}
-                disabled={isLoading || isStarted}
-              /> */}
-              {approved ? (
-                // contract has been approved, render mint button
+              {isMinted ? (
                 <>
-                  {isMinted ? (
+                  <div className={styles.status}>Success!</div>
+                  <div className={styles.action}>
+                    <a
+                      href={`https://opensea.io/${address}?tab=collected`}
+                      target='_blank'
+                      rel='noreferrer'
+                    >
+                      View on OpenSea
+                    </a>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <Button
+                    variant='contained'
+                    color='primary'
+                    size='large'
+                    onClick={() => {
+                      write?.();
+                    }}
+                    disabled={!!contractError || isLoading || isStarted}
+                  >
+                    Mint
+                  </Button>
+                  {isLoading && (
+                    <div className={styles.status}>Waiting for approval...</div>
+                  )}
+                  {isStarted && <div className={styles.status}>Minting...</div>}
+                  {mintData && (
                     <>
-                      <div className={styles.status}>Success!</div>
                       <div className={styles.action}>
                         <a
-                          href={`https://opensea.io/${address}?tab=collected`}
+                          href={`https://etherscan.io/tx/${mintData.hash}`}
                           target='_blank'
                           rel='noreferrer'
                         >
-                          View on OpenSea
+                          View transaction
                         </a>
                       </div>
                     </>
-                  ) : (
-                    <>
-                      {/* <Button
-                        variant='contained'
-                        color='primary'
-                        size='large'
-                        onClick={() => {
-                          write?.();
-                        }}
-                        disabled={!!contractError || isLoading || isStarted}
-                      >
-                        Mint
-                      </Button> */}
-                      {isLoading && (
-                        <div className={styles.status}>
-                          Waiting for approval...
-                        </div>
-                      )}
-                      {isStarted && (
-                        <div className={styles.status}>Minting...</div>
-                      )}
-                      {mintData && (
-                        <div className={styles.action}>
-                          <a
-                            href={`https://etherscan.io/tx/${mintData.hash}`}
-                            target='_blank'
-                            rel='noreferrer'
-                          >
-                            View transaction
-                          </a>
-                        </div>
-                      )}
-                      {contractError && (
-                        <div className={styles.error}>
-                          An error occurred while preparing the transaction.
-                          Make sure that you have enough funds, approved WETH to
-                          be spent by this contract, and that you haven’t
-                          reached your limit of 10 tokens.
-                        </div>
-                      )}
-                      {mintError && (
-                        <div className={styles.error}>
-                          An error occurred while accessing your wallet or
-                          processing the transaction.
-                        </div>
-                      )}
-                    </>
                   )}
-                </>
-              ) : (
-                // contract has not been approved, display message and button to approve contract
-                <>
-                  {/* <div>Please approve WETH contract before proceeding</div>
-                  <Button
-                    variant='contained'
-                    style={{ backgroundColor: 'orange' }}
-                    size='large'
-                    onClick={() => {
-                      approve?.();
-                    }}
-                    disabled={!!wethContractError}
-                  >
-                    Approve WETH
-                  </Button> */}
-                  {approveLoading && !approveSuccess && (
-                    <div className={styles.status}>Waiting for approval...</div>
+                  {contractError && (
+                    <div className={styles.error}>
+                      An error occurred while preparing the transaction. Make
+                      sure you're on the allowlist and haven't already minted
+                      your allowance.
+                    </div>
                   )}
-                  {approveSuccess && !approveData && (
-                    <div className={styles.status}>Approving WETH...</div>
-                  )}
-                  {approveData && (
-                    <div className={styles.action}>
-                      <a
-                        href={`https://etherscan.io/tx/${approveData.hash}`}
-                        target='_blank'
-                        rel='noreferrer'
-                      >
-                        View transaction
-                      </a>
+                  {mintError && (
+                    <div className={styles.error}>
+                      An error occurred while accessing your wallet or
+                      processing the transaction.
                     </div>
                   )}
                 </>
