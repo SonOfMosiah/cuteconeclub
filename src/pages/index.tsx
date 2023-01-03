@@ -34,11 +34,20 @@ const Home: NextPage = () => {
 
   const { address } = useAccount();
 
+  let t: any;
   const { config, error: contractError } = usePrepareContractWrite({
     address: newCCCAddress,
-    abi: newAbi,
+    abi: [
+      {
+        inputs: [],
+        name: 'mint',
+        outputs: [],
+        stateMutability: 'nonpayable',
+        type: 'function',
+      },
+    ],
     functionName: 'mint',
-    args: [],
+    args: t,
     overrides: {
       from: address,
     },
@@ -54,7 +63,7 @@ const Home: NextPage = () => {
 
   let x: any;
 
-  const { data: totalSupply, refetch: supplyRefetch } = useContractRead({
+  const { data: totalSupply = 0, refetch: supplyRefetch } = useContractRead({
     address: newCCCAddress,
     abi: [
       {
@@ -95,7 +104,7 @@ const Home: NextPage = () => {
       },
     ],
     functionName: 'tokenURI',
-    args: totalSupply,
+    args: [BigNumber.from(totalSupply)],
   });
 
   const { isSuccess: isMinted } = useWaitForTransaction({
@@ -135,7 +144,7 @@ const Home: NextPage = () => {
           },
         }
       );
-      const image = new Image();
+      let image;
       image.src = 'data:image/jpeg;base64,' + response.data.data;
       return image;
     } catch (error) {
