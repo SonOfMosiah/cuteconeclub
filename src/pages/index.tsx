@@ -133,6 +133,7 @@ const Home: NextPage = () => {
     }
   };
 
+  let tokenImage = <Image src='' />;
   const getImageFromIPFSHash = async () => {
     try {
       const response = await axios.get(
@@ -144,9 +145,10 @@ const Home: NextPage = () => {
           },
         }
       );
-      let image;
-      image.src = 'data:image/jpeg;base64,' + response.data.data;
-      return image;
+      tokenImage = (
+        <Image src={'data:image/jpeg;base64,' + response.data.data} />
+      );
+      return tokenImage;
     } catch (error) {
       console.error(error);
       return null;
@@ -208,7 +210,9 @@ const Home: NextPage = () => {
             </>
           )}
           {isMinted && (
-            <div className={styles.logoContainer}>getImageFromIPFSHash()</div>
+            <>
+              <div className={styles.logoContainer}>{tokenImage}</div>
+            </>
           )}
 
           <ConnectButton showBalance={false} chainStatus='none' />
