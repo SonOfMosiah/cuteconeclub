@@ -25,13 +25,15 @@ const PRICE = 0.01;
 const TOTAL_SUPPLY = 420;
 const cccAddress = '0xCe2871dc8cA2Faf5F92aC78F68Dce1bA158b0Aed';
 const newCCCAddress = '0x773A5914BEB6c395F85F911B244EB44Dc49dCD6E';
+const baseURI = 'ipfs/QmUF9taaSgjTTUsZHnqeNjnH4zwA13Utz6ZnWHugg6EP21/';
 
 const pinataApiKey = process.env.NEXT_PUBLIC_PINATA_KEY;
 const pinataSecretApiKey = process.env.NEXT_PUBLIC_PINATA_SECRET;
 
 const Home: NextPage = () => {
   const [isConnected, setIsConnected] = useState(false);
-
+  // define rerender state
+  const [rerender, setRerender] = useState(false);
   const { address } = useAccount();
 
   let t: any;
@@ -53,6 +55,9 @@ const Home: NextPage = () => {
     },
   });
 
+  // write a force rerender function
+  const forceRerender = () => setRerender(!rerender);
+
   const {
     isLoading,
     isSuccess: isStarted,
@@ -60,6 +65,11 @@ const Home: NextPage = () => {
     data: mintData,
     write,
   } = useContractWrite(config);
+
+  const { data: successfulMintData, isSuccess: isMinted } =
+    useWaitForTransaction({
+      hash: mintData?.hash,
+    });
 
   let x: any;
 
@@ -78,79 +88,24 @@ const Home: NextPage = () => {
     args: x,
   });
 
-  let tokenId: BigNumber;
-
-  const { data: tokenURI, refetch: uriRefetch } = useContractRead({
-    address: newCCCAddress,
-    abi: [
-      {
-        inputs: [
-          {
-            internalType: 'uint256',
-            name: 'tokenId',
-            type: 'uint256',
-          },
-        ],
-        name: 'tokenURI',
-        outputs: [
-          {
-            internalType: 'string',
-            name: '',
-            type: 'string',
-          },
-        ],
-        stateMutability: 'view',
-        type: 'function',
-      },
-    ],
-    functionName: 'tokenURI',
-    args: [BigNumber.from(totalSupply)],
-  });
-
-  const { isSuccess: isMinted } = useWaitForTransaction({
-    hash: mintData?.hash,
-  });
-
-  let ipfsHash: string;
-
-  const getTokenData = async () => {
-    if (tokenURI) {
-      try {
-        const response = await axios.get(
-          `https://api.pinata.cloud/data/getContent/${tokenURI}`,
-          {
-            headers: {
-              pinata_api_key: pinataApiKey,
-              pinata_secret_api_key: pinataSecretApiKey,
-            },
-          }
-        );
-        ipfsHash = response.data.image;
-      } catch (error) {
-        console.error(error);
-        return null;
-      }
-    }
+  const handleClick = () => {
+    window.location.reload();
   };
 
-  let tokenImage = <Image src='' />;
-  const getImageFromIPFSHash = async () => {
+  let tokenId: BigNumber;
+
+  let tokenImageSrc: string;
+  const getTokenData = () => {
     try {
-      const response = await axios.get(
-        `https://api.pinata.cloud/data/getContent/${ipfsHash}`,
-        {
-          headers: {
-            pinata_api_key: pinataApiKey,
-            pinata_secret_api_key: pinataSecretApiKey,
-          },
-        }
+      let id = Number(
+        successfulMintData?.logs[0].topics[3].toString() || totalSupply
       );
-      tokenImage = (
-        <Image src={'data:image/jpeg;base64,' + response.data.data} />
-      );
-      return tokenImage;
+      let uri = baseURI + id;
+      tokenImageSrc = '/Images/' + id + '.png';
+      console.log('tokenImageSrc:', tokenImageSrc);
+      forceRerender();
     } catch (error) {
-      console.error(error);
+      console.error('getTokenData error:', error);
       return null;
     }
   };
@@ -162,7 +117,8 @@ const Home: NextPage = () => {
   useEffect(() => {
     if (isMinted) {
       supplyRefetch();
-      uriRefetch();
+      console.log('tokenId:', successfulMintData?.logs[0].topics[3].toString());
+      getTokenData();
       success();
     }
   }, [isMinted]);
@@ -211,7 +167,13 @@ const Home: NextPage = () => {
           )}
           {isMinted && (
             <>
-              <div className={styles.logoContainer}>{tokenImage}</div>
+              <div className={styles.logoContainer}>
+                <Image
+                  src={'/Images/' + Number(totalSupply.toString()) + '.png'}
+                  alt='Cute Cone Club'
+                  layout='fill'
+                />
+              </div>
             </>
           )}
 
@@ -245,9 +207,6 @@ const Home: NextPage = () => {
                       View on OpenSea
                     </a>
                   </div>
-                </>
-              ) : (
-                <>
                   <Button
                     variant='contained'
                     color='primary'
@@ -255,6 +214,18 @@ const Home: NextPage = () => {
                     onClick={() => {
                       write?.();
                     }}
+                    disabled={!!contractError}
+                  >
+                    Mint
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    variant='contained'
+                    color='primary'
+                    size='large'
+                    onClick={handleClick}
                     disabled={!!contractError || isLoading || isStarted}
                   >
                     Mint
