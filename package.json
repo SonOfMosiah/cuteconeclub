@@ -2,12 +2,29 @@
   "name": "cuteconeclub-website",
   "private": true,
   "version": "0.1.0",
+  "author": "SonOfMosiah.eth <dev@sonofmosiah.ai>",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
+  "keywords": [
+    "next",
+    "next.js",
+    "react",
+    "typescript",
+    "web3",
+    "ethereum",
+    "nft",
+    "coneheads",
+    "cuteconeclub",
+    "bitecones",
+    "bitecone",
+    "polygon",
+    "reddit",
+    "twitter"
+  ],
   "dependencies": {
     "@emotion/react": "^11.10.5",
     "@emotion/styled": "^11.10.5",
