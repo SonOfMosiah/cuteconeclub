@@ -24,7 +24,8 @@ import { success } from 'helpers/effects';
 const PRICE = 0.01;
 const TOTAL_SUPPLY = 420;
 const cccAddress = '0xCe2871dc8cA2Faf5F92aC78F68Dce1bA158b0Aed';
-const newCCCAddress = '0x773A5914BEB6c395F85F911B244EB44Dc49dCD6E';
+// const newCCCAddress = '0x773A5914BEB6c395F85F911B244EB44Dc49dCD6E';
+const newCCCAddress = '0xED25FA226d3Ba81A90cD0B4c4d77223109CFd57b';
 const baseURI = 'ipfs/QmUF9taaSgjTTUsZHnqeNjnH4zwA13Utz6ZnWHugg6EP21/';
 
 const pinataApiKey = process.env.NEXT_PUBLIC_PINATA_KEY;
@@ -211,9 +212,7 @@ const Home: NextPage = () => {
                     variant='contained'
                     color='primary'
                     size='large'
-                    onClick={() => {
-                      write?.();
-                    }}
+                    onClick={handleClick}
                     disabled={!!contractError}
                   >
                     Mint
@@ -225,7 +224,9 @@ const Home: NextPage = () => {
                     variant='contained'
                     color='primary'
                     size='large'
-                    onClick={handleClick}
+                    onClick={() => {
+                      write?.();
+                    }}
                     disabled={!!contractError || isLoading || isStarted}
                   >
                     Mint
